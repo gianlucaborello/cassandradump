@@ -4,13 +4,13 @@
 
 A data exporting tool for Cassandra inspired from mysqldump, with some additional slice and dice capabilities.
 
-Disclaimer: you really shouldn't be using this! This is fragile, non-scalable, inefficient and verbose! Cassandra already offers excellent exporting/importing tools:
+Disclaimer: most of the times, you really shouldn't be using this. It's fragile, non-scalable, inefficient and verbose! Cassandra already offers excellent exporting/importing tools:
 
 - Snapshots
-- CQL COPY FROM/TO commands
+- CQL's COPY FROM/TO
 - sstable2json
 
-However, especially during development, I frequently need to execute tasks such as:
+However, especially during development, I frequently need to:
 
 - Quickly take a snapshot of an entire keyspace, and import it just as quickly without copying too many files around or losing too much time
 - Ability to take a very small subset of a massive production database (according to some CQL-like filtering) and import it quickly on my development environment
