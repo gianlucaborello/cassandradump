@@ -89,7 +89,7 @@ The created dump file can be directly used with ```cqlsh -f```, or there's also 
 Using ```--keyspace```, it's possible to filter for a specific set of keyspaces
 
 ```
-gianluca@sid:~$ python cassandradump.py --keyspace system --export-file dump.cql
+$ python cassandradump.py --keyspace system --export-file dump.cql
 Exporting schema for keyspace system
 Exporting schema for column family system.peers
 Exporting data for column family system.peers
@@ -112,7 +112,7 @@ CREATE TABLE system.peers (peer inet PRIMARY KEY, data_center text, host_id uuid
 Using ```--cf```, it's possible to filter for a specific set of column families:
 
 ```
-gianluca@sid:~$ python cassandradump.py --cf OpsCenter.rollups7200 --no-create --export-file dump.cql
+$ python cassandradump.py --cf OpsCenter.rollups7200 --no-create --export-file dump.cql
 Exporting schema for column family OpsCenter.rollups7200
 Exporting data for column family OpsCenter.rollups7200
 ```
@@ -132,7 +132,7 @@ Using ```--no-insert``` and ```--no-create``` it's possible to tweak what CQL st
 Most of the times, the column families in a production scenario are huge, and you might just want a little slice of it. With ```--filter```, it's possible to specify a set of CQL filters, and just the data that satisfies those filters will be included in the dump:
 
 ```
-gianluca@sid:~$ python cassandradump.py  --filter "system.schema_columns WHERE keyspace_name='OpsCenter'" --export-file dump.cql
+$ python cassandradump.py  --filter "system.schema_columns WHERE keyspace_name='OpsCenter'" --export-file dump.cql
 Exporting data for filter "system.schema_columns where keyspace_name ='OpsCenter'"
 ```
 
