@@ -90,7 +90,6 @@ Using ```--keyspace```, it's possible to filter for a specific set of keyspaces
 
 ```
 gianluca@sid:~$ python cassandradump.py --keyspace system --export-file dump.cql
-gianluca@sid:~$ python ~/src/cassandradump/cassandradump.py --export-file dump.cql --keyspace system
 Exporting schema for keyspace system
 Exporting schema for column family system.peers
 Exporting data for column family system.peers
