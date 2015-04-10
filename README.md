@@ -4,7 +4,7 @@
 
 A data exporting tool for Cassandra inspired from mysqldump, with some added slice and dice capabilities.
 
-Disclaimer: you really shouldn't be using this! This is weak, non-scalable, inefficient, verbose! Cassandra already offers excellent exporting/importing tools:
+Disclaimer: you really shouldn't be using this! This is fragile, non-scalable, inefficient and verbose! Cassandra already offers excellent exporting/importing tools:
 
 - Snapshots
 - CQL COPY FROM/TO commands
