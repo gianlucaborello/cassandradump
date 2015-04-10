@@ -1,0 +1,233 @@
+import argparse
+import sys
+import cassandra
+from cassandra.cluster import Cluster
+
+TIMEOUT = 120.0
+FETCH_SIZE = 100
+DOT_EVERY = 1000
+
+args = None
+
+
+def log_quiet(msg):
+	if not args.quiet:
+		sys.stdout.write(msg)
+		sys.stdout.flush()
+
+
+def table_to_cqlfile(session, keyspace, tablename, predicate, tableval, filep):
+	if predicate is None:
+		query = 'SELECT * FROM "' + keyspace + '"."' + tablename + '"'
+	else:
+		query = 'SELECT * FROM ' + predicate
+
+	rows = session.execute(query)
+
+	cnt = 0
+
+	for row in rows:
+		values = []
+		for key, value in row.iteritems():
+			if tableval.columns[key].data_type.typename == 'blob':
+				encoded = session.encoder.cql_encode_bytes(value)
+			else:
+				encoded = session.encoder.cql_encode_all_types(value)
+
+			values.append(encoded)
+
+		filep.write('INSERT INTO "' + keyspace + '"."' + tablename + '" (' + ', '.join(row.keys()) + ') VALUES (' + ', '.join(values) + ')\n')
+
+		cnt += 1
+
+		if (cnt % DOT_EVERY) == 0:
+			log_quiet('.')
+
+	if cnt > DOT_EVERY:
+		log_quiet('\n')
+
+
+def import_data(session):
+	f = open(args.import_file, 'r')
+
+	cnt = 0
+
+	for line in f:
+		session.execute(line)
+
+		cnt += 1
+
+		if (cnt % DOT_EVERY) == 0:
+			log_quiet('.')
+
+	if cnt > DOT_EVERY:
+		log_quiet('\n')
+
+	f.close()
+
+
+def get_keyspace_or_fail(session, keyname):
+	keyspace = session.cluster.metadata.keyspaces.get(keyname)
+
+	if not keyspace:
+		sys.stderr.write('Can\'t find keyspace "' + keyname + '"\n')
+		sys.exit(1)
+
+	return keyspace
+
+
+def get_column_family_or_fail(session, keyspace, tablename):
+	tableval = keyspace.tables.get(tablename)
+
+	if not tableval:
+		sys.stderr.write('Can\'t find table "' + tablename + '"\n')
+		sys.exit(1)
+
+	return tableval
+
+
+def export_data(session):
+	selection_options = 0
+
+	if args.keyspace is not None:
+		selection_options += 1
+
+	if args.cf is not None:
+		selection_options += 1
+
+	if args.predicate is not None:
+		selection_options += 1
+
+	if selection_options > 1:
+		sys.stderr.write('--cf, --keyspace and --predicate can\'t be combined\n')
+		sys.exit(1)
+
+	f = open(args.export_file, 'w')
+
+	keyspaces = None
+
+	if selection_options == 0:
+		log_quiet('Exporting all keyspaces\n')
+		keyspaces = session.cluster.metadata.keyspaces.keys()
+
+	if args.keyspace is not None:
+		keyspaces = args.keyspace
+
+	if keyspaces is not None:
+		for keyname in keyspaces:
+			keyspace = get_keyspace_or_fail(session, keyname)
+
+			if not args.no_create:
+				log_quiet('Exporting schema for keyspace ' + keyname + '\n')
+				f.write('DROP KEYSPACE IF EXISTS "' + keyname + '";\n')
+				f.write(keyspace.as_cql_query() + '\n')
+
+			for tablename, tableval in keyspace.tables.iteritems():
+				if tableval.is_cql_compatible:
+					if not args.no_create:
+						log_quiet('Exporting schema for column family ' + keyname + '.' + tablename + '\n')
+						f.write('DROP TABLE IF EXISTS "' + keyname + '"."' + tablename + '";\n');
+						f.write(tableval.as_cql_query() + ';\n')
+
+					if not args.no_insert:
+						log_quiet('Exporting data for column family ' + keyname + '.' + tablename + '\n')
+						table_to_cqlfile(session, keyname, tablename, None, tableval, f)
+
+	if args.cf is not None:
+		for cf in args.cf:
+			if '.' not in cf:
+				sys.stderr.write('Invalid keyspace.column_family input\n')
+				sys.exit(1)
+
+			keyname = cf.split('.')[0]
+			tablename = cf.split('.')[1]
+
+			keyspace = get_keyspace_or_fail(session, keyname)
+			tableval = get_column_family_or_fail(session, keyspace, tablename)
+
+			if tableval.is_cql_compatible:
+				if not args.no_create:
+					log_quiet('Exporting schema for column family ' + keyname + '.' + tablename + '\n')
+					f.write('DROP TABLE IF EXISTS "' + keyname + '"."' + tablename + '";\n');
+					f.write(tableval.as_cql_query() + ';\n')
+
+				if not args.no_insert:
+					log_quiet('Exporting data for column family ' + keyname + '.' + tablename + '\n')
+					table_to_cqlfile(session, keyname, tablename, None, tableval, f)
+
+	if args.predicate is not None:
+		for predicate in args.predicate:
+			stripped = predicate.strip()
+			cf = stripped.split(' ')[0]
+
+			keyname = cf.split('.')[0]
+			tablename = cf.split('.')[1]
+
+			keyspace = get_keyspace_or_fail(session, keyname)
+			tableval = get_column_family_or_fail(session, keyspace, tablename)
+
+			if not tableval:
+				sys.stderr.write('Can\'t find table "' + tablename + '"\n')
+				sys.exit(1)
+
+			log_quiet('Exporting data for predicate "' + stripped + '"\n')
+			table_to_cqlfile(session, keyname, tablename, stripped, tableval, f)
+
+	f.close()
+
+
+def setup_cluster():
+	if args.host is None:
+		nodes = ['localhost']
+	else:
+		nodes = [args.host]
+	
+	cluster = Cluster(contact_points=nodes, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+	session = cluster.connect()
+
+	session.default_timeout = TIMEOUT
+	session.default_fetch_size = FETCH_SIZE
+	session.row_factory = cassandra.query.ordered_dict_factory
+	return session
+
+
+def cleanup_cluster(session):
+	session.cluster.shutdown()
+	session.shutdown()
+
+
+def main():
+	global args
+
+	parser = argparse.ArgumentParser(description='A data exporting tool for Cassandra inspired from mysqldump, with some added slice and dice capabilities.')
+	parser.add_argument('--host', help='the address of a Cassandra node in the cluster, localhost if missing')
+	parser.add_argument('--keyspace', help='export a keyspace along with all its column families. Can be specified multiple times', action='append')
+	parser.add_argument('--cf', help='export a column family. The name must be prepended with the keyspace name followed by ".", e.g. "system.traces". Can be specified multiple times', action='append')
+	parser.add_argument('--predicate', help='export a slice of a column family. This takes essentially the specifier from a normal query, such as, and exports only that data', action='append')
+	parser.add_argument('--no-insert', help='don\'t generate insert statements', action='store_true')
+	parser.add_argument('--no-create', help='don\'t generate create (and drop) statements', action='store_true')
+	parser.add_argument('--import-file', help='import data from the specified file')
+	parser.add_argument('--export-file', help='export data to the specified file')
+	parser.add_argument('--quiet', help='quiet progress logging', action='store_true')
+	args = parser.parse_args()
+
+	if args.import_file is None and args.export_file is None:
+		sys.stderr.write('--import-file or --export-file must be specified\n')
+		sys.exit(1)
+
+	if args.import_file is not None and args.export_file is not None:
+		sys.stderr.write('--import-file and --export-file can\'t be specified at the same time\n')
+		sys.exit(1)
+
+	session = setup_cluster()
+
+	if args.import_file:
+		import_data(session)
+	elif args.export_file:
+		export_data(session)
+
+	cleanup_cluster(session)
+
+
+if __name__ == '__main__':
+    main()
