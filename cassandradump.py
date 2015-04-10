@@ -170,8 +170,9 @@ def export_data(session):
 				sys.stderr.write('Can\'t find table "' + tablename + '"\n')
 				sys.exit(1)
 
-			log_quiet('Exporting data for predicate "' + stripped + '"\n')
-			table_to_cqlfile(session, keyname, tablename, stripped, tableval, f)
+			if not args.no_insert:
+				log_quiet('Exporting data for predicate "' + stripped + '"\n')
+				table_to_cqlfile(session, keyname, tablename, stripped, tableval, f)
 
 	f.close()
 
@@ -200,10 +201,10 @@ def main():
 	global args
 
 	parser = argparse.ArgumentParser(description='A data exporting tool for Cassandra inspired from mysqldump, with some added slice and dice capabilities.')
-	parser.add_argument('--host', help='the address of a Cassandra node in the cluster, localhost if missing')
+	parser.add_argument('--host', help='the address of a Cassandra node in the cluster (localhost if omitted)')
 	parser.add_argument('--keyspace', help='export a keyspace along with all its column families. Can be specified multiple times', action='append')
-	parser.add_argument('--cf', help='export a column family. The name must be prepended with the keyspace name followed by ".", e.g. "system.traces". Can be specified multiple times', action='append')
-	parser.add_argument('--predicate', help='export a slice of a column family. This takes essentially the specifier from a normal query, such as, and exports only that data', action='append')
+	parser.add_argument('--cf', help='export a column family. The name must include the keyspace, e.g. "system.schema_columns". Can be specified multiple times', action='append')
+	parser.add_argument('--predicate', help='export a slice of a column family according to a CQL filter. This takes essentially a typical SELECT query stripped of the initial "SELECT ... FROM" part (e.g. "system.schema_columns where keyspace_name =\'OpsCenter\'", and exports only that data. Can be specified multiple times', action='append')
 	parser.add_argument('--no-insert', help='don\'t generate insert statements', action='store_true')
 	parser.add_argument('--no-create', help='don\'t generate create (and drop) statements', action='store_true')
 	parser.add_argument('--import-file', help='import data from the specified file')

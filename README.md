@@ -35,17 +35,20 @@ slice and dice capabilities.
 
 optional arguments:
   -h, --help            show this help message and exit
-  --host HOST           the address of a Cassandra node in the cluster,
-                        localhost if missing
+  --host HOST           the address of a Cassandra node in the cluster
+                        (localhost if omitted)
   --keyspace KEYSPACE   export a keyspace along with all its column families.
                         Can be specified multiple times
-  --cf CF               export a column family. The name must be prepended
-                        with the keyspace name followed by ".", e.g.
-                        "system.traces". Can be specified multiple times
+  --cf CF               export a column family. The name must include the
+                        keyspace, e.g. "system.schema_columns". Can be
+                        specified multiple times
   --predicate PREDICATE
-                        export a slice of a column family. This takes
-                        essentially the specifier from a normal query, such
-                        as, and exports only that data
+                        export a slice of a column family according to a CQL
+                        filter. This takes essentially a typical SELECT query
+                        stripped of the initial "SELECT ... FROM" part (e.g.
+                        "system.schema_columns where keyspace_name
+                        ='OpsCenter'", and exports only that data. Can be
+                        specified multiple times
   --no-insert           don't generate insert statements
   --no-create           don't generate create (and drop) statements
   --import-file IMPORT_FILE
