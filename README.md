@@ -4,7 +4,7 @@
 
 A data exporting tool for Cassandra inspired from mysqldump, with some additional slice and dice capabilities.
 
-Disclaimer: most of the times, you really shouldn't be using this. It's fragile, non-scalable, inefficient and verbose! Cassandra already offers excellent exporting/importing tools:
+Disclaimer: most of the times, you really shouldn't be using this. It's fragile, non-scalable, inefficient and verbose. Cassandra already offers excellent exporting/importing tools:
 
 - Snapshots
 - CQL's COPY FROM/TO
@@ -57,11 +57,10 @@ optional arguments:
   --quiet               quiet progress logging
 ```
 
-In its simplest invocation, it exports all the schemas and data:
+In its simplest invocation, it exports data and schemas for all keyspaces:
 
 ```
 $ python cassandradump.py --export-file dump.cql
-$ python ~/src/cassandradump/cassandradump.py --export-file dump.cql
 Exporting all keyspaces
 Exporting schema for keyspace OpsCenter
 Exporting schema for column family OpsCenter.events_timeline
