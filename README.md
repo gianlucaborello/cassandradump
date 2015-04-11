@@ -131,7 +131,7 @@ Using ```--no-insert``` and ```--no-create``` it's possible to tweak what CQL st
 Most of the times, the column families in a production scenario are huge, and you might just want a little slice of it. With ```--filter```, it's possible to specify a set of CQL filters, and just the data that satisfies those filters will be included in the dump:
 
 ```
-$ python cassandradump.py  --filter "system.schema_columns WHERE keyspace_name='OpsCenter'" --export-file dump.cql
+$ python cassandradump.py --filter "system.schema_columns WHERE keyspace_name='OpsCenter'" --export-file dump.cql
 Exporting data for filter "system.schema_columns where keyspace_name ='OpsCenter'"
 ```
 
