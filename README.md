@@ -113,7 +113,6 @@ Using ```--cf```, it's possible to filter for a specific set of column families:
 
 ```
 $ python cassandradump.py --cf OpsCenter.rollups7200 --no-create --export-file dump.cql
-Exporting schema for column family OpsCenter.rollups7200
 Exporting data for column family OpsCenter.rollups7200
 ```
 
