@@ -6,6 +6,7 @@ try:
 except ImportError:
     sys.exit('Python Cassandra driver not installed. You might try \"pip install cassandra-driver\".')
 
+from cassandra.auth import PlainTextAuthProvider #For protocol_version 2
 from cassandra.cluster import Cluster
 
 TIMEOUT = 120.0
@@ -189,6 +190,8 @@ def export_data(session):
 
     f.close()
 
+def getCredential(self):
+    return {'username': args.username, 'password': args.password}
 
 def setup_cluster():
     if args.host is None:
@@ -196,7 +199,17 @@ def setup_cluster():
     else:
         nodes = [args.host]
 
-    cluster = Cluster(contact_points=nodes, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+    cluster = None
+
+    if args.protocol_version is not None and args.username is not None and args.password is not None:
+        if args.protocol_version == '1':
+            credentials = {'username': args.username, 'password': args.password}
+            cluster = Cluster(contact_points=nodes, protocol_version=1, auth_provider=getCredential, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+        elif args.protocol_version == '2':
+            ap = PlainTextAuthProvider(username=args.username, password=args.password)
+            cluster = Cluster(contact_points=nodes, protocol_version=2, auth_provider=ap, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+    else:
+        cluster = Cluster(contact_points=nodes, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
     session = cluster.connect()
 
     session.default_timeout = TIMEOUT
@@ -221,6 +234,9 @@ def main():
     parser.add_argument('--no-insert', help='don\'t generate insert statements', action='store_true')
     parser.add_argument('--no-create', help='don\'t generate create (and drop) statements', action='store_true')
     parser.add_argument('--import-file', help='import data from the specified file')
+    parser.add_argument('--protocol_version', help='set auth_provider version (required for authentication)')
+    parser.add_argument('--username', help='set username for auth (only if protocol_version is set)')
+    parser.add_argument('--password', help='set password for authentication (only if protocol_version is set)')
     parser.add_argument('--export-file', help='export data to the specified file')
     parser.add_argument('--quiet', help='quiet progress logging', action='store_true')
     args = parser.parse_args()
@@ -232,6 +248,11 @@ def main():
     if args.import_file is not None and args.export_file is not None:
         sys.stderr.write('--import-file and --export-file can\'t be specified at the same time\n')
         sys.exit(1)
+
+    if args.protocol_version is not None:
+    	if args.username is None or args.password is None:
+    		sys.stderr.write('--username and --password must be specified\n')
+    		sys.exit(1)
 
     session = setup_cluster()
 
