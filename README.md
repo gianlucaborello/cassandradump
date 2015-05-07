@@ -27,6 +27,7 @@ The help should already contain some useful information:
 $ python cassandradump.py --help
 usage: cassandradump.py [-h] [--host HOST] [--keyspace KEYSPACE] [--cf CF]
                         [--filter FILTER] [--no-insert] [--no-create]
+                        [--username USERNAME]  [--password PASSWORD]
                         [--import-file IMPORT_FILE]
                         [--export-file EXPORT_FILE] [--quiet]
 
@@ -54,6 +55,10 @@ optional arguments:
                         import data from the specified file
   --export-file EXPORT_FILE
                         export data to the specified file
+  --protocol_version VERSION
+                        set auth_provider version (required for authentication)
+  --username USERNAME   set username for auth (only if protocol_version is set)
+  --password PASSWORD   set password for authentication (only if protocol_version is set)                
   --quiet               quiet progress logging
 ```
 
