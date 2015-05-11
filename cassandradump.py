@@ -37,6 +37,12 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
         for key, value in row.iteritems():
             if tableval.columns[key].data_type.typename == 'blob':
                 encoded = session.encoder.cql_encode_bytes(value)
+            elif value is not None and tableval.columns[key].data_type.typename.startswith('map'):
+                encoded = session.encoder.cql_encode_map_collection(value)
+            elif value is not None and tableval.columns[key].data_type.typename.startswith('set'):
+                encoded = session.encoder.cql_encode_set_collection(value)
+            elif value is not None and tableval.columns[key].data_type.typename.startswith('list'):
+                encoded = session.encoder.cql_encode_list_collection(value)
             else:
                 encoded = session.encoder.cql_encode_all_types(value)
 
