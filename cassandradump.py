@@ -42,7 +42,10 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
 
             values.append(encoded)
 
-        filep.write('INSERT INTO "' + keyspace + '"."' + tablename + '" (' + ', '.join(row.keys()).encode('ascii') + ') VALUES (' + ', '.join(values) + ')\n')
+        filep.write('INSERT INTO "' + keyspace.encode('ascii') + '"."' 
+            + tablename.encode('ascii') + '" (' 
+            + ', '.join(row.keys()).encode('ascii') + ') VALUES (' 
+            + ', '.join(values) + ')\n')
 
         cnt += 1
 
