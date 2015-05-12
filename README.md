@@ -27,8 +27,9 @@ The help should already contain some useful information:
 $ python cassandradump.py --help
 usage: cassandradump.py [-h] [--host HOST] [--keyspace KEYSPACE] [--cf CF]
                         [--filter FILTER] [--no-insert] [--no-create]
-                        [--username USERNAME]  [--password PASSWORD]
                         [--import-file IMPORT_FILE]
+                        [--protocol_version PROTOCOL_VERSION]
+                        [--username USERNAME] [--password PASSWORD]
                         [--export-file EXPORT_FILE] [--quiet]
 
 A data exporting tool for Cassandra inspired from mysqldump, with some added
@@ -53,12 +54,15 @@ optional arguments:
   --no-create           don't generate create (and drop) statements
   --import-file IMPORT_FILE
                         import data from the specified file
+  --protocol_version PROTOCOL_VERSION
+                        set auth_provider version (required for
+                        authentication)
+  --username USERNAME   set username for auth (only if protocol_version is
+                        set)
+  --password PASSWORD   set password for authentication (only if
+                        protocol_version is set)
   --export-file EXPORT_FILE
                         export data to the specified file
-  --protocol_version VERSION
-                        set auth_provider version (required for authentication)
-  --username USERNAME   set username for auth (only if protocol_version is set)
-  --password PASSWORD   set password for authentication (only if protocol_version is set)                
   --quiet               quiet progress logging
 ```
 
