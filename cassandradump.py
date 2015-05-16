@@ -1,5 +1,7 @@
 import argparse
 import sys
+import itertools
+import codecs
 
 try:
     import cassandra
@@ -15,6 +17,8 @@ DOT_EVERY = 1000
 
 args = None
 
+def to_utf8(s):
+    return codecs.decode(s, 'utf-8')
 
 def log_quiet(msg):
     if not args.quiet:
@@ -32,26 +36,65 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
 
     cnt = 0
 
+    def make_non_null_value_encoder(typename):
+        if typename == 'blob':
+            return session.encoder.cql_encode_bytes
+        elif typename.startswith('map'):
+            return session.encoder.cql_encode_map_collection
+        elif typename.startswith('set'):
+            return session.encoder.cql_encode_set_collection
+        elif typename.startswith('list'):
+            return session.encoder.cql_encode_list_collection
+        else:
+            return session.encoder.cql_encode_all_types
+
+    def make_value_encoder(typename):
+        e = make_non_null_value_encoder(typename)
+        return lambda v : session.encoder.cql_encode_all_types(v) if v is None else e(v)
+
+    def make_value_encoders(tableval):
+        return dict((to_utf8(k), make_value_encoder(v.data_type.typename)) for k, v in tableval.columns.iteritems())
+
+    def make_row_encoder(tableevel):
+        partitions = dict(
+            (has_counter, list(to_utf8(k) for k, v in columns))
+            for has_counter, columns in itertools.groupby(tableval.columns.iteritems(), lambda (k, v): v.data_type.typename == 'counter')
+        )
+
+        keyspace_utf8 = to_utf8(keyspace)
+        tablename_utf8 = to_utf8(tablename)
+
+        counters = partitions.get(True, [])
+        non_counters = partitions.get(False, [])
+        columns = counters + non_counters
+
+        if len(counters) > 0:
+            def row_encoder(values):
+                set_clause = ", ".join('%s = %s + %s' % (c, c,  values[c]) for c in counters if values[c] != 'NULL')
+                where_clause = " AND ".join('%s = %s' % (c, values[c]) for c in non_counters)
+                return 'UPDATE "%(keyspace)s"."%(tablename)s" SET %(set_clause)s WHERE %(where_clause)s' % dict(
+                        keyspace = keyspace_utf8,
+                        tablename = tablename_utf8,
+                        where_clause = where_clause,
+                        set_clause = set_clause,
+                )
+        else:
+            columns = list(counters + non_counters)
+            def row_encoder(values):
+                return 'INSERT INTO "%(keyspace)s"."%(tablename)s" (%(columns)s) VALUES (%(values)s)' % dict(
+                        keyspace = keyspace_utf8,
+                        tablename = tablename_utf8,
+                        columns = ', '.join(c for c in columns),
+                        values = ', '.join(values[c] for c in columns),
+                )
+        return row_encoder
+
+    value_encoders = make_value_encoders(tableval)
+    row_encoder = make_row_encoder(tableval)
+
     for row in rows:
-        values = []
-        for key, value in row.iteritems():
-            if tableval.columns[key].data_type.typename == 'blob':
-                encoded = session.encoder.cql_encode_bytes(value)
-            elif value is not None and tableval.columns[key].data_type.typename.startswith('map'):
-                encoded = session.encoder.cql_encode_map_collection(value)
-            elif value is not None and tableval.columns[key].data_type.typename.startswith('set'):
-                encoded = session.encoder.cql_encode_set_collection(value)
-            elif value is not None and tableval.columns[key].data_type.typename.startswith('list'):
-                encoded = session.encoder.cql_encode_list_collection(value)
-            else:
-                encoded = session.encoder.cql_encode_all_types(value)
-
-            values.append(encoded)
-
-        filep.write('INSERT INTO "' + keyspace.encode('ascii') + '"."' 
-            + tablename.encode('ascii') + '" (' 
-            + ', '.join(row.keys()).encode('ascii') + ') VALUES (' 
-            + ', '.join(values) + ')\n')
+        values = dict((to_utf8(k), to_utf8(value_encoders[k](v))) for k, v in row.iteritems())
+        filep.write("%s;\n" % row_encoder(values))
 
         cnt += 1
 
@@ -63,17 +106,25 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
 
 
 def import_data(session):
-    f = open(args.import_file, 'r')
+    f = codecs.open(args.import_file, 'r', encoding = 'utf-8')
 
     cnt = 0
 
+    statement = ''
+
     for line in f:
-        session.execute(line)
+        statement += line
+        if statement.endswith(";\n"):
+            session.execute(statement)
+            statement = ''
 
         cnt += 1
 
         if (cnt % DOT_EVERY) == 0:
             log_quiet('.')
+
+    if statement != '':
+        session.execute(statement)
 
     if cnt > DOT_EVERY:
         log_quiet('\n')
@@ -117,7 +168,7 @@ def export_data(session):
         sys.stderr.write('--cf, --keyspace and --filter can\'t be combined\n')
         sys.exit(1)
 
-    f = open(args.export_file, 'w')
+    f = codecs.open(args.export_file, 'w', encoding = 'utf-8')
 
     keyspaces = None
 
