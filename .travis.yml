@@ -2,6 +2,8 @@ language: python
 services:
   - cassandra
 install: 
+  - dpkg -l
+  - apt-get update
   - pip install cassandra-driver
 script: 
   - ./tests/run_tests.sh
