@@ -1,0 +1,5 @@
+language: python
+services:
+  - cassandra
+script: 
+  - ./tests/run_tests.sh
