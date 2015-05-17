@@ -4,12 +4,17 @@ set -exu
 TESTDIR="$(dirname "$(readlink -f "$0")")"
 APPDIR=$TESTDIR/..
 
-python $APPDIR/cassandradump.py --import-file $TESTDIR/test_keyspace_init.cql
+python $APPDIR/cassandradump.py --import-file $TESTDIR/test_keyspace_init.cql --sync
 
 python $APPDIR/cassandradump.py --export-file /tmp/dump.cql --keyspace test_keyspace
 diff -a $TESTDIR/full_export.cql.expected /tmp/dump.cql
 
 python $APPDIR/cassandradump.py --import-file $TESTDIR/full_export.cql.expected
+
+python $APPDIR/cassandradump.py --export-file /tmp/dump.cql --keyspace test_keyspace
+diff -a $TESTDIR/full_export.cql.expected /tmp/dump.cql
+
+python $APPDIR/cassandradump.py --import-file $TESTDIR/full_export.cql.expected --sync
 
 python $APPDIR/cassandradump.py --export-file /tmp/dump.cql --keyspace test_keyspace
 diff -a $TESTDIR/full_export.cql.expected /tmp/dump.cql

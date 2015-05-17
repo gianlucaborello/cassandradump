@@ -5,6 +5,7 @@ import codecs
 
 try:
     import cassandra
+    import cassandra.concurrent
 except ImportError:
     sys.exit('Python Cassandra driver not installed. You might try \"pip install cassandra-driver\".')
 
@@ -14,6 +15,7 @@ from cassandra.cluster import Cluster
 TIMEOUT = 120.0
 FETCH_SIZE = 100
 DOT_EVERY = 1000
+CONCURRENT_BATCH_SIZE = 1000
 
 args = None
 
@@ -105,23 +107,48 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
         log_quiet('\n')
 
 
+def can_execute_concurrently(statement):
+    if args.sync:
+        return False
+
+    if statement.upper().startswith('INSERT') or statement.upper().startswith('UPDATE'):
+        return True
+    else:
+        return False
+
+
 def import_data(session):
     f = codecs.open(args.import_file, 'r', encoding = 'utf-8')
 
     cnt = 0
 
     statement = ''
+    concurrent_statements = []
 
     for line in f:
         statement += line
         if statement.endswith(";\n"):
-            session.execute(statement)
+            if can_execute_concurrently(statement):
+                concurrent_statements.append((statement, None))
+
+                if len(concurrent_statements) >= CONCURRENT_BATCH_SIZE:
+                    cassandra.concurrent.execute_concurrent(session, concurrent_statements)
+                    concurrent_statements = []
+            else:
+                if len(concurrent_statements) > 0:
+                    cassandra.concurrent.execute_concurrent(session, concurrent_statements)
+                    concurrent_statements = []
+
+                session.execute(statement)
+
             statement = ''
 
-        cnt += 1
+            cnt += 1
+            if (cnt % DOT_EVERY) == 0:
+                log_quiet('.')
 
-        if (cnt % DOT_EVERY) == 0:
-            log_quiet('.')
+    if len(concurrent_statements) > 0:
+        cassandra.concurrent.execute_concurrent(session, concurrent_statements)
 
     if statement != '':
         session.execute(statement)
@@ -287,18 +314,19 @@ def main():
     global args
 
     parser = argparse.ArgumentParser(description='A data exporting tool for Cassandra inspired from mysqldump, with some added slice and dice capabilities.')
-    parser.add_argument('--host', help='the address of a Cassandra node in the cluster (localhost if omitted)')
-    parser.add_argument('--keyspace', help='export a keyspace along with all its column families. Can be specified multiple times', action='append')
     parser.add_argument('--cf', help='export a column family. The name must include the keyspace, e.g. "system.schema_columns". Can be specified multiple times', action='append')
-    parser.add_argument('--filter', help='export a slice of a column family according to a CQL filter. This takes essentially a typical SELECT query stripped of the initial "SELECT ... FROM" part (e.g. "system.schema_columns where keyspace_name =\'OpsCenter\'", and exports only that data. Can be specified multiple times', action='append')
-    parser.add_argument('--no-insert', help='don\'t generate insert statements', action='store_true')
-    parser.add_argument('--no-create', help='don\'t generate create (and drop) statements', action='store_true')
-    parser.add_argument('--import-file', help='import data from the specified file')
-    parser.add_argument('--protocol_version', help='set auth_provider version (required for authentication)')
-    parser.add_argument('--username', help='set username for auth (only if protocol_version is set)')
-    parser.add_argument('--password', help='set password for authentication (only if protocol_version is set)')
     parser.add_argument('--export-file', help='export data to the specified file')
+    parser.add_argument('--filter', help='export a slice of a column family according to a CQL filter. This takes essentially a typical SELECT query stripped of the initial "SELECT ... FROM" part (e.g. "system.schema_columns where keyspace_name =\'OpsCenter\'", and exports only that data. Can be specified multiple times', action='append')
+    parser.add_argument('--host', help='the address of a Cassandra node in the cluster (localhost if omitted)')
+    parser.add_argument('--import-file', help='import data from the specified file')
+    parser.add_argument('--keyspace', help='export a keyspace along with all its column families. Can be specified multiple times', action='append')
+    parser.add_argument('--no-create', help='don\'t generate create (and drop) statements', action='store_true')
+    parser.add_argument('--no-insert', help='don\'t generate insert statements', action='store_true')
+    parser.add_argument('--password', help='set password for authentication (only if protocol_version is set)')
+    parser.add_argument('--protocol_version', help='set auth_provider version (required for authentication)')
     parser.add_argument('--quiet', help='quiet progress logging', action='store_true')
+    parser.add_argument('--sync', help='import data in synchronous mode (default asynchronous)', action='store_true')
+    parser.add_argument('--username', help='set username for auth (only if protocol_version is set)')
     args = parser.parse_args()
 
     if args.import_file is None and args.export_file is None:

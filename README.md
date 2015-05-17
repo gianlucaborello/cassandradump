@@ -26,46 +26,46 @@ It's still missing many major Cassandra features that I don't use daily, so feel
 The help should already contain some useful information:
 
 ```
-$ python cassandradump.py --help
-usage: cassandradump.py [-h] [--host HOST] [--keyspace KEYSPACE] [--cf CF]
-                        [--filter FILTER] [--no-insert] [--no-create]
-                        [--import-file IMPORT_FILE]
-                        [--protocol_version PROTOCOL_VERSION]
-                        [--username USERNAME] [--password PASSWORD]
-                        [--export-file EXPORT_FILE] [--quiet]
+usage: cassandradump.py [-h] [--cf CF] [--export-file EXPORT_FILE]
+                        [--filter FILTER] [--host HOST]
+                        [--import-file IMPORT_FILE] [--keyspace KEYSPACE]
+                        [--no-create] [--no-insert] [--password PASSWORD]
+                        [--protocol_version PROTOCOL_VERSION] [--quiet]
+                        [--sync] [--username USERNAME]
 
 A data exporting tool for Cassandra inspired from mysqldump, with some added
 slice and dice capabilities.
 
 optional arguments:
   -h, --help            show this help message and exit
-  --host HOST           the address of a Cassandra node in the cluster
-                        (localhost if omitted)
-  --keyspace KEYSPACE   export a keyspace along with all its column families.
-                        Can be specified multiple times
   --cf CF               export a column family. The name must include the
                         keyspace, e.g. "system.schema_columns". Can be
                         specified multiple times
+  --export-file EXPORT_FILE
+                        export data to the specified file
   --filter FILTER       export a slice of a column family according to a CQL
                         filter. This takes essentially a typical SELECT query
                         stripped of the initial "SELECT ... FROM" part (e.g.
                         "system.schema_columns where keyspace_name
                         ='OpsCenter'", and exports only that data. Can be
                         specified multiple times
-  --no-insert           don't generate insert statements
-  --no-create           don't generate create (and drop) statements
+  --host HOST           the address of a Cassandra node in the cluster
+                        (localhost if omitted)
   --import-file IMPORT_FILE
                         import data from the specified file
+  --keyspace KEYSPACE   export a keyspace along with all its column families.
+                        Can be specified multiple times
+  --no-create           don't generate create (and drop) statements
+  --no-insert           don't generate insert statements
+  --password PASSWORD   set password for authentication (only if
+                        protocol_version is set)
   --protocol_version PROTOCOL_VERSION
                         set auth_provider version (required for
                         authentication)
+  --quiet               quiet progress logging
+  --sync                import data in synchronous mode (default asynchronous)
   --username USERNAME   set username for auth (only if protocol_version is
                         set)
-  --password PASSWORD   set password for authentication (only if
-                        protocol_version is set)
-  --export-file EXPORT_FILE
-                        export data to the specified file
-  --quiet               quiet progress logging
 ```
 
 In its simplest invocation, it exports data and schemas for all keyspaces:
@@ -95,7 +95,7 @@ INSERT INTO "OpsCenter"."events_timeline" (key, column1, value) VALUES ('201501'
 ...
 ```
 
-The created dump file can be directly used with ```cqlsh -f```, or there's also a ```--import-file``` switch because I noticed that sometimes cqlsh gets stuck if a big file is passed as input (probably a temporary bug).
+The created dump file can be directly used with ```cqlsh -f```, or there's also a ```--import-file``` that uses asynchronous import so it goes definitely fast.
 
 Using ```--keyspace```, it's possible to filter for a specific set of keyspaces
 
