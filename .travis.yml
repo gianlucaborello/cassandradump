@@ -5,7 +5,7 @@ install:
   - sudo apt-get update
   - sudo apt-get -y -o Dpkg::Options::=--force-confnew install dsc21
   - sudo service cassandra stop
-  - sudo rm -rf /var/lib/cassandra/data/system/*
+  - sudo rm -rf /var/lib/cassandra/*
   - sudo service cassandra start
   - sleep 10
   - ps aux
