@@ -1,5 +1,7 @@
 # cassandradump
 
+[![Build Status](https://travis-ci.org/gianlucaborello/cassandradump.svg?branch=master)](https://travis-ci.org/gianlucaborello/cassandradump)
+
 ## Description
 
 A data exporting tool for Cassandra inspired from mysqldump, with some additional slice and dice capabilities.
