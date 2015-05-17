@@ -1,5 +1,7 @@
 language: python
 services:
   - cassandra
+install: 
+  - pip install cassandra-driver
 script: 
   - ./tests/run_tests.sh
