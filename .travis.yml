@@ -8,9 +8,6 @@ install:
   - sudo rm -rf /var/lib/cassandra/*
   - sudo service cassandra start
   - sleep 10
-  - ps aux
-  - netstat -lntp
-  - cat /var/log/cassandra/system.log
   - sudo apt-get install libev4 libev-dev
   - pip install blist
   - pip install cassandra-driver
