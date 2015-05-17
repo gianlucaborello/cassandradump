@@ -211,11 +211,11 @@ UPDATE users SET top_places = [ 'the shire' ] + top_places WHERE user_id = 'frod
 ALTER TABLE users ADD todo map<timestamp, text>;
 UPDATE users 
   SET todo =
-  { '2012-9-24' : 'enter mordor',
-  '2014-10-2 12:00' : 'throw ring into mount doom' }
+  { '2012-9-24+0000' : 'enter mordor',
+  '2014-10-2 12:00+0000' : 'throw ring into mount doom' }
   WHERE user_id = 'frodo';
 
-UPDATE users SET todo['2014-10-2 12:00'] = 'throw my precious into mount doom'
+UPDATE users SET todo['2014-10-2 12:00+0000'] = 'throw my precious into mount doom'
   WHERE user_id = 'frodo';
 
 CREATE TABLE page_view_counts
