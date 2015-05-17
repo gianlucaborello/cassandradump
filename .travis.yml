@@ -7,6 +7,9 @@ install:
   - sudo service cassandra stop
   - sudo rm -rf /var/lib/cassandra/data/system/*
   - sudo service cassandra start
+  - sleep 10
+  - ps aux
+  - sudo apt-get install libev4 libev-dev
   - pip install cassandra-driver
 script: 
   - ./tests/run_tests.sh
