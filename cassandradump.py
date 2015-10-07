@@ -86,7 +86,7 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
                 return 'INSERT INTO "%(keyspace)s"."%(tablename)s" (%(columns)s) VALUES (%(values)s)' % dict(
                         keyspace = keyspace_utf8,
                         tablename = tablename_utf8,
-                        columns = ', '.join(c for c in columns),
+                        columns = ', '.join('"{}"'.format(c) for c in columns),
                         values = ', '.join(values[c] for c in columns),
                 )
         return row_encoder
