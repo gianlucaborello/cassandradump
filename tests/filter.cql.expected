@@ -1,1 +1,1 @@
-INSERT INTO "test_keyspace"."twenty_rows_composite_table" (a, b, c) VALUES ('A', '19', '19');
+INSERT INTO "test_keyspace"."twenty_rows_composite_table" ("a", "b", "c") VALUES ('A', '19', '19');
