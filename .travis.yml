@@ -9,6 +9,7 @@ install:
   - sudo service cassandra start
   - sleep 10
   - sudo apt-get install libev4 libev-dev
+  - pip install --upgrade pip
   - pip install blist
   - pip install cassandra-driver==2.7.2
 script: 
