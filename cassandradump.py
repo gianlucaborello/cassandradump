@@ -216,15 +216,10 @@ def export_data(session):
             if not args.no_create:
                 log_quiet('Exporting schema for keyspace ' + keyname + '\n')
                 f.write('DROP KEYSPACE IF EXISTS "' + keyname + '";\n')
-                f.write(keyspace.as_cql_query() + '\n')
+                f.write(keyspace.export_as_string() + '\n')
 
             for tablename, tableval in keyspace.tables.iteritems():
                 if tableval.is_cql_compatible:
-                    if not args.no_create:
-                        log_quiet('Exporting schema for column family ' + keyname + '.' + tablename + '\n')
-                        f.write('DROP TABLE IF EXISTS "' + keyname + '"."' + tablename + '";\n')
-                        f.write(tableval.as_cql_query() + ';\n')
-
                     if not args.no_insert:
                         log_quiet('Exporting data for column family ' + keyname + '.' + tablename + '\n')
                         table_to_cqlfile(session, keyname, tablename, None, tableval, f)
@@ -245,7 +240,7 @@ def export_data(session):
                 if not args.no_create:
                     log_quiet('Exporting schema for column family ' + keyname + '.' + tablename + '\n')
                     f.write('DROP TABLE IF EXISTS "' + keyname + '"."' + tablename + '";\n')
-                    f.write(tableval.as_cql_query() + ';\n')
+                    f.write(tableval.export_as_string() + ';\n')
 
                 if not args.no_insert:
                     log_quiet('Exporting data for column family ' + keyname + '.' + tablename + '\n')
