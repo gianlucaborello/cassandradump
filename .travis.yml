@@ -10,6 +10,6 @@ install:
   - sleep 10
   - sudo apt-get install libev4 libev-dev
   - pip install blist
-  - pip install cassandra-driver
+  - pip install cassandra-driver=2.7.2
 script: 
   - ./tests/run_tests.sh
