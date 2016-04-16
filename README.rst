@@ -40,7 +40,7 @@ The help should already contain some useful information:
 ::
 
     usage: cassandradump.py [-h] [--cf CF] [--export-file EXPORT_FILE]
-                            [--filter FILTER] [--host HOST]
+                            [--filter FILTER] [--host HOST] [--port PORT]
                             [--import-file IMPORT_FILE] [--keyspace KEYSPACE]
                             [--no-create] [--no-insert] [--password PASSWORD]
                             [--protocol_version PROTOCOL_VERSION] [--quiet]
@@ -64,6 +64,8 @@ The help should already contain some useful information:
                             specified multiple times
       --host HOST           the address of a Cassandra node in the cluster
                             (localhost if omitted)
+      --port PORT           the port of a Cassandra node in the cluster
+                            (9042 if omitted)
       --import-file IMPORT_FILE
                             import data from the specified file
       --keyspace KEYSPACE   export a keyspace along with all its column families.
