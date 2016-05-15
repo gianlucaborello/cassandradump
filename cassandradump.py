@@ -278,7 +278,7 @@ def export_data(session):
 
     f.close()
 
-def getCredential(self):
+def get_credentials(self):
     return {'username': args.username, 'password': args.password}
 
 def setup_cluster():
@@ -294,15 +294,19 @@ def setup_cluster():
 
     cluster = None
 
-    if args.protocol_version is not None and args.username is not None and args.password is not None:
-        if args.protocol_version == '1':
-            credentials = {'username': args.username, 'password': args.password}
-            cluster = Cluster(contact_points=nodes, protocol_version=1, auth_provider=getCredential, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
-        elif args.protocol_version == '2':
-            ap = PlainTextAuthProvider(username=args.username, password=args.password)
-            cluster = Cluster(contact_points=nodes, port=port, protocol_version=2, auth_provider=ap, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+    if args.protocol_version is not None:
+        auth = None
+
+        if args.username is not None and args.password is not None:
+            if args.protocol_version == 1:
+                auth = get_credentials
+            elif args.protocol_version > 1:
+                auth = PlainTextAuthProvider(username=args.username, password=args.password)
+
+        cluster = Cluster(contact_points=nodes, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
     else:
         cluster = Cluster(contact_points=nodes, port=port, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+
     session = cluster.connect()
 
     session.default_timeout = TIMEOUT
@@ -329,11 +333,11 @@ def main():
     parser.add_argument('--keyspace', help='export a keyspace along with all its column families. Can be specified multiple times', action='append')
     parser.add_argument('--no-create', help='don\'t generate create (and drop) statements', action='store_true')
     parser.add_argument('--no-insert', help='don\'t generate insert statements', action='store_true')
-    parser.add_argument('--password', help='set password for authentication (only if protocol_version is set)')
-    parser.add_argument('--protocol_version', help='set auth_provider version (required for authentication)')
+    parser.add_argument('--password', help='set password for authentication (only if protocol-version is set)')
+    parser.add_argument('--protocol-version', help='set protocol version (required for authentication)', type=int)
     parser.add_argument('--quiet', help='quiet progress logging', action='store_true')
     parser.add_argument('--sync', help='import data in synchronous mode (default asynchronous)', action='store_true')
-    parser.add_argument('--username', help='set username for auth (only if protocol_version is set)')
+    parser.add_argument('--username', help='set username for auth (only if protocol-version is set)')
     args = parser.parse_args()
 
     if args.import_file is None and args.export_file is None:
@@ -343,11 +347,6 @@ def main():
     if args.import_file is not None and args.export_file is not None:
         sys.stderr.write('--import-file and --export-file can\'t be specified at the same time\n')
         sys.exit(1)
-
-    if args.protocol_version is not None:
-        if args.username is None or args.password is None:
-            sys.stderr.write('--username and --password must be specified\n')
-            sys.exit(1)
 
     session = setup_cluster()
 
