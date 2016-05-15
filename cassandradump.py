@@ -19,6 +19,12 @@ CONCURRENT_BATCH_SIZE = 1000
 
 args = None
 
+def cql_type(v):
+    try:
+        return v.data_type.typename
+    except AttributeError:
+        return v.cql_type
+
 def to_utf8(s):
     return codecs.decode(s, 'utf-8')
 
@@ -55,12 +61,12 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
         return lambda v : session.encoder.cql_encode_all_types(v) if v is None else e(v)
 
     def make_value_encoders(tableval):
-        return dict((to_utf8(k), make_value_encoder(v.data_type.typename)) for k, v in tableval.columns.iteritems())
+        return dict((to_utf8(k), make_value_encoder(cql_type(v))) for k, v in tableval.columns.iteritems())
 
     def make_row_encoder(tableevel):
         partitions = dict(
             (has_counter, list(to_utf8(k) for k, v in columns))
-            for has_counter, columns in itertools.groupby(tableval.columns.iteritems(), lambda (k, v): v.data_type.typename == 'counter')
+            for has_counter, columns in itertools.groupby(tableval.columns.iteritems(), lambda (k, v): cql_type(v) == 'counter')
         )
 
         keyspace_utf8 = to_utf8(keyspace)
@@ -339,9 +345,9 @@ def main():
         sys.exit(1)
 
     if args.protocol_version is not None:
-    	if args.username is None or args.password is None:
-    		sys.stderr.write('--username and --password must be specified\n')
-    		sys.exit(1)
+        if args.username is None or args.password is None:
+            sys.stderr.write('--username and --password must be specified\n')
+            sys.exit(1)
 
     session = setup_cluster()
 
