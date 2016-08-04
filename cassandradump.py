@@ -303,7 +303,7 @@ def setup_cluster():
             elif args.protocol_version > 1:
                 auth = PlainTextAuthProvider(username=args.username, password=args.password)
 
-        cluster = Cluster(contact_points=nodes, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+        cluster = Cluster(contact_points=nodes, port=port, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
     else:
         cluster = Cluster(contact_points=nodes, port=port, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
 
