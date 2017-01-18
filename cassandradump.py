@@ -216,7 +216,7 @@ def export_data(session):
                 keyspaces.append(keyspace)
 
     if args.limit is not None:
-        limit = args.limit
+        limit = int(args.limit)
     else:
         #limit = 1000 ##for the moment I limit it to 1000 elements by force, just in case
         limit = 0 
@@ -299,7 +299,7 @@ def setup_cluster():
     if args.port is None:
         port = 9042
     else:
-        port = args.port
+        port = int(args.port)
 
     cluster = None
 
