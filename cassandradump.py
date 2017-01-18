@@ -218,8 +218,8 @@ def export_data(session):
     if args.limit is not None:
         limit = args.limit
     else:
-        limit = 1000 ##for the moment I limit it to 1000 elements by force, just in case
-        #limit = 0 
+        #limit = 1000 ##for the moment I limit it to 1000 elements by force, just in case
+        limit = 0 
 
     if args.keyspace is not None:
         keyspaces = args.keyspace
