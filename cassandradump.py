@@ -218,8 +218,8 @@ def export_data(session):
     if args.limit is not None:
         limit = args.limit
     else:
-        #limit = 1000 ##for the moment I limit it to 1000 elements by force, just in case
-        limit = 0 
+        limit = 1000 ##for the moment I limit it to 1000 elements by force, just in case
+        #limit = 0 
 
     if args.keyspace is not None:
         keyspaces = args.keyspace
@@ -237,7 +237,7 @@ def export_data(session):
                 if tableval.is_cql_compatible:
                     if not args.no_insert:
                         log_quiet('Exporting data for column family ' + keyname + '.' + tablename + '\n')
-                        table_to_cqlfile(session, keyname, tablename, None, tableval, f)
+                        table_to_cqlfile(session, keyname, tablename, None, tableval, f, limit)
 
     if args.cf is not None:
         for cf in args.cf:
@@ -259,7 +259,7 @@ def export_data(session):
 
                 if not args.no_insert:
                     log_quiet('Exporting data for column family ' + keyname + '.' + tablename + '\n')
-                    table_to_cqlfile(session, keyname, tablename, None, tableval, f)
+                    table_to_cqlfile(session, keyname, tablename, None, tableval, f, limit)
 
     if args.filter is not None:
         for flt in args.filter:
@@ -283,7 +283,7 @@ def export_data(session):
 
             if not args.no_insert:
                 log_quiet('Exporting data for filter "' + stripped + '"\n')
-                table_to_cqlfile(session, keyname, tablename, stripped, tableval, f)
+                table_to_cqlfile(session, keyname, tablename, stripped, tableval, f, limit)
 
     f.close()
 
