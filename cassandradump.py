@@ -34,12 +34,15 @@ def log_quiet(msg):
         sys.stdout.flush()
 
 
-def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep):
+def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0):
     if flt is None:
         query = 'SELECT * FROM "' + keyspace + '"."' + tablename + '"'
     else:
         query = 'SELECT * FROM ' + flt
 
+    if limit > 0: 
+        query = query + " LIMIT "+ str(limit)
+        
     rows = session.execute(query)
 
     cnt = 0
@@ -212,6 +215,12 @@ def export_data(session):
             if keyspace not in ('system', 'system_traces'):
                 keyspaces.append(keyspace)
 
+    if args.limit is not None:
+        limit = args.limit
+    else:
+        #limit = 1000 ##for the moment I limit it to 1000 elements by force, just in case
+        limit = 0 
+
     if args.keyspace is not None:
         keyspaces = args.keyspace
 
@@ -338,6 +347,8 @@ def main():
     parser.add_argument('--quiet', help='quiet progress logging', action='store_true')
     parser.add_argument('--sync', help='import data in synchronous mode (default asynchronous)', action='store_true')
     parser.add_argument('--username', help='set username for auth (only if protocol-version is set)')
+    parser.add_argument('--limit', help='set number of rows return limit')
+    
     args = parser.parse_args()
 
     if args.import_file is None and args.export_file is None:
