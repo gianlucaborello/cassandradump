@@ -73,7 +73,7 @@ The help should already contain some useful information:
       --no-create           don't generate create (and drop) statements
       --no-insert           don't generate insert statements
       --password PASSWORD   set password for authentication (only if
-                            protocol_version is set)
+                            protocol-version is set)
       --protocol-version PROTOCOL_VERSION
                             set auth_provider version (required for
                             authentication)
