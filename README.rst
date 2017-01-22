@@ -43,7 +43,7 @@ The help should already contain some useful information:
                             [--filter FILTER] [--host HOST] [--port PORT]
                             [--import-file IMPORT_FILE] [--keyspace KEYSPACE]
                             [--no-create] [--no-insert] [--password PASSWORD]
-                            [--protocol_version PROTOCOL_VERSION] [--quiet]
+                            [--protocol-version PROTOCOL_VERSION] [--quiet]
                             [--sync] [--username USERNAME]
 
     A data exporting tool for Cassandra inspired from mysqldump, with some added
@@ -74,12 +74,12 @@ The help should already contain some useful information:
       --no-insert           don't generate insert statements
       --password PASSWORD   set password for authentication (only if
                             protocol_version is set)
-      --protocol_version PROTOCOL_VERSION
+      --protocol-version PROTOCOL_VERSION
                             set auth_provider version (required for
                             authentication)
       --quiet               quiet progress logging
       --sync                import data in synchronous mode (default asynchronous)
-      --username USERNAME   set username for auth (only if protocol_version is
+      --username USERNAME   set username for auth (only if protocol-version is
                             set)
 
 In its simplest invocation, it exports data and schemas for all
