@@ -19,14 +19,14 @@ CONCURRENT_BATCH_SIZE = 1000
 
 args = None
 
-def cql_type(v):
+def cql_type(val):
     try:
-        return v.data_type.typename
+        return val.data_type.typename
     except AttributeError:
-        return v.cql_type
+        return val.cql_type
 
-def to_utf8(s):
-    return codecs.decode(s, 'utf-8')
+def to_utf8(string):
+    return codecs.decode(string, 'utf-8')
 
 def log_quiet(msg):
     if not args.quiet:
@@ -40,9 +40,9 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
     else:
         query = 'SELECT * FROM ' + flt
 
-    if limit > 0: 
-        query = query + " LIMIT "+ str(limit)
-        
+    if limit > 0:
+        query = query + " LIMIT " + str(limit)
+
     rows = session.execute(query)
 
     cnt = 0
@@ -61,12 +61,12 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
 
     def make_value_encoder(typename):
         e = make_non_null_value_encoder(typename)
-        return lambda v : session.encoder.cql_encode_all_types(v) if v is None else e(v)
+        return lambda v: session.encoder.cql_encode_all_types(v) if v is None else e(v)
 
     def make_value_encoders(tableval):
         return dict((to_utf8(k), make_value_encoder(cql_type(v))) for k, v in tableval.columns.iteritems())
 
-    def make_row_encoder(tableevel):
+    def make_row_encoder():
         partitions = dict(
             (has_counter, list(to_utf8(k) for k, v in columns))
             for has_counter, columns in itertools.groupby(tableval.columns.iteritems(), lambda (k, v): cql_type(v) == 'counter')
@@ -81,27 +81,27 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
 
         if len(counters) > 0:
             def row_encoder(values):
-                set_clause = ", ".join('%s = %s + %s' % (c, c,  values[c]) for c in counters if values[c] != 'NULL')
+                set_clause = ", ".join('%s = %s + %s' % (c, c, values[c]) for c in counters if values[c] != 'NULL')
                 where_clause = " AND ".join('%s = %s' % (c, values[c]) for c in non_counters)
                 return 'UPDATE "%(keyspace)s"."%(tablename)s" SET %(set_clause)s WHERE %(where_clause)s' % dict(
-                        keyspace = keyspace_utf8,
-                        tablename = tablename_utf8,
-                        where_clause = where_clause,
-                        set_clause = set_clause,
+                    keyspace=keyspace_utf8,
+                    tablename=tablename_utf8,
+                    where_clause=where_clause,
+                    set_clause=set_clause,
                 )
         else:
             columns = list(counters + non_counters)
             def row_encoder(values):
                 return 'INSERT INTO "%(keyspace)s"."%(tablename)s" (%(columns)s) VALUES (%(values)s)' % dict(
-                        keyspace = keyspace_utf8,
-                        tablename = tablename_utf8,
-                        columns = ', '.join('"{}"'.format(c) for c in columns if values[c]!="NULL"),
-                        values = ', '.join(values[c] for c in columns if values[c]!="NULL"),
+                    keyspace=keyspace_utf8,
+                    tablename=tablename_utf8,
+                    columns=', '.join('"{}"'.format(c) for c in columns if values[c] != "NULL"),
+                    values=', '.join(values[c] for c in columns if values[c] != "NULL"),
                 )
         return row_encoder
 
     value_encoders = make_value_encoders(tableval)
-    row_encoder = make_row_encoder(tableval)
+    row_encoder = make_row_encoder()
 
     for row in rows:
         values = dict((to_utf8(k), to_utf8(value_encoders[k](v))) for k, v in row.iteritems())
@@ -127,14 +127,14 @@ def can_execute_concurrently(statement):
 
 
 def import_data(session):
-    f = codecs.open(args.import_file, 'r', encoding = 'utf-8')
+    fp = codecs.open(args.import_file, 'r', encoding='utf-8')
 
     cnt = 0
 
     statement = ''
     concurrent_statements = []
 
-    for line in f:
+    for line in fp:
         statement += line
         if statement.endswith(";\n"):
             if can_execute_concurrently(statement):
@@ -165,7 +165,7 @@ def import_data(session):
     if cnt > DOT_EVERY:
         log_quiet('\n')
 
-    f.close()
+    fp.close()
 
 
 def get_keyspace_or_fail(session, keyname):
@@ -204,7 +204,7 @@ def export_data(session):
         sys.stderr.write('--cf, --keyspace and --filter can\'t be combined\n')
         sys.exit(1)
 
-    f = codecs.open(args.export_file, 'w', encoding = 'utf-8')
+    f = codecs.open(args.export_file, 'w', encoding='utf-8')
 
     keyspaces = None
 
@@ -218,8 +218,7 @@ def export_data(session):
     if args.limit is not None:
         limit = int(args.limit)
     else:
-        #limit = 1000 ##for the moment I limit it to 1000 elements by force, just in case
-        limit = 0 
+        limit = 0
 
     if args.keyspace is not None:
         keyspaces = args.keyspace
@@ -287,7 +286,7 @@ def export_data(session):
 
     f.close()
 
-def get_credentials(self):
+def get_credentials():
     return {'username': args.username, 'password': args.password}
 
 def setup_cluster():
@@ -348,7 +347,7 @@ def main():
     parser.add_argument('--sync', help='import data in synchronous mode (default asynchronous)', action='store_true')
     parser.add_argument('--username', help='set username for auth (only if protocol-version is set)')
     parser.add_argument('--limit', help='set number of rows return limit')
-    
+
     args = parser.parse_args()
 
     if args.import_file is None and args.export_file is None:
