@@ -42,9 +42,11 @@ The help should already contain some useful information:
     usage: cassandradump.py [-h] [--cf CF] [--export-file EXPORT_FILE]
                             [--filter FILTER] [--host HOST] [--port PORT]
                             [--import-file IMPORT_FILE] [--keyspace KEYSPACE]
-                            [--no-create] [--no-insert] [--password PASSWORD]
+                            [--exclude-cf EXCLUDE_CF] [--no-create] [--no-insert]
+                            [--password PASSWORD]
                             [--protocol-version PROTOCOL_VERSION] [--quiet]
-                            [--sync] [--username USERNAME]
+                            [--sync] [--username USERNAME] [--ssl]
+                            [--certfile CERTFILE]
 
     A data exporting tool for Cassandra inspired from mysqldump, with some added
     slice and dice capabilities.
@@ -70,6 +72,9 @@ The help should already contain some useful information:
                             import data from the specified file
       --keyspace KEYSPACE   export a keyspace along with all its column families.
                             Can be specified multiple times
+      --exclude-cf EXCLUDE_CF
+                            when using --keyspace, specify column family to
+                            exclude. Can be specified multiple times
       --no-create           don't generate create (and drop) statements
       --no-insert           don't generate insert statements
       --password PASSWORD   set password for authentication (only if
@@ -81,6 +86,9 @@ The help should already contain some useful information:
       --sync                import data in synchronous mode (default asynchronous)
       --username USERNAME   set username for auth (only if protocol-version is
                             set)
+      --ssl                 enable ssl connection to Cassandra cluster.  Must also
+                            set --certfile.
+      --certfile CERTFILE   ca cert file for SSL.  Assumes --ssl.
 
 In its simplest invocation, it exports data and schemas for all
 keyspaces:
