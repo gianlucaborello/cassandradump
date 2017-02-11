@@ -2,6 +2,7 @@ import argparse
 import sys
 import itertools
 import codecs
+from ssl import PROTOCOL_TLSv1
 
 try:
     import cassandra
@@ -207,6 +208,7 @@ def export_data(session):
     f = codecs.open(args.export_file, 'w', encoding='utf-8')
 
     keyspaces = None
+    exclude_list = []
 
     if selection_options == 0:
         log_quiet('Exporting all keyspaces\n')
@@ -222,6 +224,8 @@ def export_data(session):
 
     if args.keyspace is not None:
         keyspaces = args.keyspace
+        if args.exclude_cf is not None:
+            exclude_list.extend(args.exclude_cf)
 
     if keyspaces is not None:
         for keyname in keyspaces:
@@ -233,7 +237,10 @@ def export_data(session):
                 f.write(keyspace.export_as_string() + '\n')
 
             for tablename, tableval in keyspace.tables.iteritems():
-                if tableval.is_cql_compatible:
+                if tablename in exclude_list:
+                    log_quiet('Skipping data export for column family ' + keyname + '.' + tablename + '\n')
+                    continue
+                elif tableval.is_cql_compatible:
                     if not args.no_insert:
                         log_quiet('Exporting data for column family ' + keyname + '.' + tablename + '\n')
                         table_to_cqlfile(session, keyname, tablename, None, tableval, f, limit)
@@ -300,6 +307,12 @@ def setup_cluster():
     else:
         port = int(args.port)
 
+    if args.ssl is not None and args.certfile is not None:
+      ssl_opts = { 'ca_certs': args.certfile,
+                   'ssl_version': PROTOCOL_TLSv1 }
+    else:
+      ssl_opts = {}
+
     cluster = None
 
     if args.protocol_version is not None:
@@ -311,9 +324,9 @@ def setup_cluster():
             elif args.protocol_version > 1:
                 auth = PlainTextAuthProvider(username=args.username, password=args.password)
 
-        cluster = Cluster(contact_points=nodes, port=port, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+        cluster = Cluster(contact_points=nodes, port=port, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
     else:
-        cluster = Cluster(contact_points=nodes, port=port, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes))
+        cluster = Cluster(contact_points=nodes, port=port, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
 
     session = cluster.connect()
 
@@ -339,6 +352,7 @@ def main():
     parser.add_argument('--port', help='the port of a Cassandra node in the cluster (9042 if omitted)')
     parser.add_argument('--import-file', help='import data from the specified file')
     parser.add_argument('--keyspace', help='export a keyspace along with all its column families. Can be specified multiple times', action='append')
+    parser.add_argument('--exclude-cf', help='when using --keyspace, specify column family to exclude.  Can be specified multiple times', action='append')
     parser.add_argument('--no-create', help='don\'t generate create (and drop) statements', action='store_true')
     parser.add_argument('--no-insert', help='don\'t generate insert statements', action='store_true')
     parser.add_argument('--password', help='set password for authentication (only if protocol-version is set)')
@@ -347,6 +361,8 @@ def main():
     parser.add_argument('--sync', help='import data in synchronous mode (default asynchronous)', action='store_true')
     parser.add_argument('--username', help='set username for auth (only if protocol-version is set)')
     parser.add_argument('--limit', help='set number of rows return limit')
+    parser.add_argument('--ssl', help='enable ssl connection to Cassandra cluster.  Must also set --certfile.', action='store_true')
+    parser.add_argument('--certfile', help='ca cert file for SSL.  Assumes --ssl.')
 
     args = parser.parse_args()
 
@@ -356,6 +372,10 @@ def main():
 
     if args.import_file is not None and args.export_file is not None:
         sys.stderr.write('--import-file and --export-file can\'t be specified at the same time\n')
+        sys.exit(1)
+
+    if args.ssl is True and args.certfile is None:
+        sys.stderr.write('--certfile must also be specified when using --ssl\n')
         sys.exit(1)
 
     session = setup_cluster()
