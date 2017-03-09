@@ -309,7 +309,9 @@ def setup_cluster():
 
     if args.ssl is not None and args.certfile is not None:
       ssl_opts = { 'ca_certs': args.certfile,
-                   'ssl_version': PROTOCOL_TLSv1 }
+                   'ssl_version': PROTOCOL_TLSv1,
+                   'keyfile': args.userkey,
+                   'certfile': args.usercert }
     else:
       ssl_opts = {}
 
@@ -323,7 +325,7 @@ def setup_cluster():
                 auth = get_credentials
             elif args.protocol_version > 1:
                 auth = PlainTextAuthProvider(username=args.username, password=args.password)
-
+        
         cluster = Cluster(contact_points=nodes, port=port, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
     else:
         cluster = Cluster(contact_points=nodes, port=port, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
@@ -363,11 +365,17 @@ def main():
     parser.add_argument('--limit', help='set number of rows return limit')
     parser.add_argument('--ssl', help='enable ssl connection to Cassandra cluster.  Must also set --certfile.', action='store_true')
     parser.add_argument('--certfile', help='ca cert file for SSL.  Assumes --ssl.')
+    parser.add_argument('--userkey', help='user key file for client authentication.  Assumes --ssl.')
+    parser.add_argument('--usercert', help='user cert file for client authentication.  Assumes --ssl.')
 
     args = parser.parse_args()
 
     if args.import_file is None and args.export_file is None:
         sys.stderr.write('--import-file or --export-file must be specified\n')
+        sys.exit(1)
+
+    if (args.userkey is not None or args.usercert is not None) and (args.userkey is None or args.usercert is None):
+        sys.stderr.write('--userkey and --usercert must both be provided\n')
         sys.exit(1)
 
     if args.import_file is not None and args.export_file is not None:
