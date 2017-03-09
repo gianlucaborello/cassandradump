@@ -307,6 +307,11 @@ def setup_cluster():
     else:
         port = int(args.port)
 
+    if args.connect_timeout is None:
+        connect_timeout = 5
+    else:
+        connect_timeout = int(args.connect_timeout)
+
     if args.ssl is not None and args.certfile is not None:
       ssl_opts = { 'ca_certs': args.certfile,
                    'ssl_version': PROTOCOL_TLSv1,
@@ -326,9 +331,9 @@ def setup_cluster():
             elif args.protocol_version > 1:
                 auth = PlainTextAuthProvider(username=args.username, password=args.password)
 
-        cluster = Cluster(control_connection_timeout=args.connect_timeout, connect_timeout=args.connect_timeout, contact_points=nodes, port=port, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
+        cluster = Cluster(control_connection_timeout=connect_timeout, connect_timeout=connect_timeout, contact_points=nodes, port=port, protocol_version=args.protocol_version, auth_provider=auth, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
     else:
-        cluster = Cluster(control_connection_timeout=args.connect_timeout, connect_timeout=args.connect_timeout, contact_points=nodes, port=port, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
+        cluster = Cluster(control_connection_timeout=connect_timeout, connect_timeout=connect_timeout, contact_points=nodes, port=port, load_balancing_policy=cassandra.policies.WhiteListRoundRobinPolicy(nodes), ssl_options=ssl_opts)
 
     session = cluster.connect()
 
