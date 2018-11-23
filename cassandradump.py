@@ -68,9 +68,12 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
         return dict((to_utf8(k), make_value_encoder(cql_type(v))) for k, v in tableval.columns.iteritems())
 
     def make_row_encoder():
+        def type_selector(k, v):
+            return cql_type(v) == 'counter'
+        
         partitions = dict(
             (has_counter, list(to_utf8(k) for k, v in columns))
-            for has_counter, columns in itertools.groupby(tableval.columns.iteritems(), lambda (k, v): cql_type(v) == 'counter')
+            for has_counter, columns in itertools.groupby(tableval.columns.iteritems(), type_selector)
         )
 
         keyspace_utf8 = to_utf8(keyspace)
