@@ -17,4 +17,6 @@ install:
   - pip install cassandra-driver
 
 script: 
-  - ./tests/run_tests.sh
+  - cd tests
+  - make t1
+  - make t2
