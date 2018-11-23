@@ -74,7 +74,11 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
         return dict((to_utf8(k), make_value_encoder(cql_type(v))) for k, v in six.iteritems(tableval.columns))
 
     def make_row_encoder():
-        def type_selector(k, v):
+        def type_selector(*args):
+            if len(args) == 1:
+                (k, v) = args[0]
+            else:
+                (k, v) = args
             return cql_type(v) == 'counter'
         
         partitions = dict(
