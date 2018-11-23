@@ -12,5 +12,9 @@ before_install:
   - docker pull cassandra:2.1
   - docker run --name cassandra -p 127.0.0.1:9042:9042 -p 127.0.0.1:9160:9160   -d cassandra:2.1
 
+install:
+  - pip install six
+  - pip install cassandra-driver
+
 script: 
   - ./tests/run_tests.sh
