@@ -20,3 +20,11 @@ script:
   - cd tests
   - make t1
   - make t2
+  - make t3
+  - make t4
+  - make t5
+  - make t6
+  - make t7
+  - make t8
+  - make t9
+  - make t10
