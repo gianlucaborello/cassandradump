@@ -2,7 +2,13 @@ import argparse
 import sys
 import itertools
 import codecs
+
 from ssl import PROTOCOL_TLSv1
+
+try:
+    import six
+except ImportError:
+    sys.exit('Please install six compatibility layer, via: \"pip install six\"')
 
 try:
     import cassandra
@@ -65,7 +71,7 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
         return lambda v: session.encoder.cql_encode_all_types(v) if v is None else e(v)
 
     def make_value_encoders(tableval):
-        return dict((to_utf8(k), make_value_encoder(cql_type(v))) for k, v in tableval.columns.iteritems())
+        return dict((to_utf8(k), make_value_encoder(cql_type(v))) for k, v in six.iteritems(tableval.columns))
 
     def make_row_encoder():
         def type_selector(k, v):
@@ -73,7 +79,7 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
         
         partitions = dict(
             (has_counter, list(to_utf8(k) for k, v in columns))
-            for has_counter, columns in itertools.groupby(tableval.columns.iteritems(), type_selector)
+            for has_counter, columns in itertools.groupby(six.iteritems(tableval.columns), type_selector)
         )
 
         keyspace_utf8 = to_utf8(keyspace)
@@ -108,7 +114,7 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
     row_encoder = make_row_encoder()
 
     for row in rows:
-        values = dict((to_utf8(k), to_utf8(value_encoders[k](v))) for k, v in row.iteritems())
+        values = dict((to_utf8(k), to_utf8(value_encoders[k](v))) for k, v in six.iteritems(row))
         filep.write("%s;\n" % row_encoder(values))
 
         cnt += 1
@@ -239,7 +245,7 @@ def export_data(session):
                 f.write('DROP KEYSPACE IF EXISTS "' + keyname + '";\n')
                 f.write(keyspace.export_as_string() + '\n')
 
-            for tablename, tableval in keyspace.tables.iteritems():
+            for tablename, tableval in six.iteritems(keyspace.tables):
                 if tablename in exclude_list:
                     log_quiet('Skipping data export for column family ' + keyname + '.' + tablename + '\n')
                     continue
