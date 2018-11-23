@@ -33,7 +33,11 @@ def cql_type(val):
         return val.cql_type
 
 def to_utf8(string):
-    return codecs.decode(string, 'utf-8')
+    try:
+        return codecs.decode(string, 'utf-8')
+    except TypeError:
+        # Python3. We already have UTF-8 string.
+        return string
 
 def log_quiet(msg):
     if not args.quiet:
