@@ -20,7 +20,7 @@ t5:
 
 t6:
 	python ${APPDIR}/cassandradump.py --export-file /tmp/dump.cql --keyspace test_keyspace
-	bash compare.sh ${TESTDIR}/full_export.cql.expected) /tmp/dump.cql
+	bash compare.sh ${TESTDIR}/full_export.cql.expected /tmp/dump.cql
 
 t7:
 	python ${APPDIR}/cassandradump.py --export-file /tmp/dump.cql --cf test_keyspace.twenty_rows_composite_table
