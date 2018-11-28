@@ -84,7 +84,7 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
             else:
                 (k, v) = args
             return cql_type(v) == 'counter'
-        
+
         partitions = dict(
             (has_counter, list(to_utf8(k) for k, v in columns))
             for has_counter, columns in itertools.groupby(six.iteritems(tableval.columns), type_selector)
@@ -97,7 +97,7 @@ def table_to_cqlfile(session, keyspace, tablename, flt, tableval, filep, limit=0
         non_counters = partitions.get(False, [])
         columns = counters + non_counters
 
-        if len(counters) > 0:
+        if counters:
             def row_encoder(values):
                 set_clause = ", ".join('%s = %s + %s' % (c, c, values[c]) for c in counters if values[c] != 'NULL')
                 where_clause = " AND ".join('%s = %s' % (c, values[c]) for c in non_counters)
@@ -162,7 +162,7 @@ def import_data(session):
                     cassandra.concurrent.execute_concurrent(session, concurrent_statements)
                     concurrent_statements = []
             else:
-                if len(concurrent_statements) > 0:
+                if concurrent_statements:
                     cassandra.concurrent.execute_concurrent(session, concurrent_statements)
                     concurrent_statements = []
 
@@ -174,7 +174,7 @@ def import_data(session):
             if (cnt % DOT_EVERY) == 0:
                 log_quiet('.')
 
-    if len(concurrent_statements) > 0:
+    if concurrent_statements:
         cassandra.concurrent.execute_concurrent(session, concurrent_statements)
 
     if statement != '':
@@ -330,12 +330,12 @@ def setup_cluster():
         connect_timeout = int(args.connect_timeout)
 
     if args.ssl is not None and args.certfile is not None:
-      ssl_opts = { 'ca_certs': args.certfile,
-                   'ssl_version': PROTOCOL_TLSv1,
-                   'keyfile': args.userkey,
-                   'certfile': args.usercert }
+        ssl_opts = {'ca_certs': args.certfile,
+                    'ssl_version': PROTOCOL_TLSv1,
+                    'keyfile': args.userkey,
+                    'certfile': args.usercert}
     else:
-      ssl_opts = {}
+        ssl_opts = {}
 
     cluster = None
 
